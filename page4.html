@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css"> 
+<link rel="manifest" href="manifest.json">
+<title>خربش 😈</title>
+<style>
+/* ... (احتفظ بالتنسيقات CSS كما هي) ... */
+/* ==================== CSS عام ==================== */
+body { 
+    background: linear-gradient(135deg, #59379A, #407CA0); 
+    font-family: 'Tajawal', Arial, sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    min-height: 100vh; 
+    margin: 0;
+    color: white;
+    direction: rtl;
+}
+
+.game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    border-radius: 15px;
+}
+
+.circle-container {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background-color: #D78B0F; 
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+#scratch-canvas { 
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%; 
+    touch-action: none; 
+    z-index: 2; 
+    cursor: grab;
+    transition: opacity 0.5s ease-out; 
+}
+
+#secret-word {
+    position: absolute;
+    font-size: 29px;
+    font-weight: bold;
+    color: black; 
+    text-align: center;
+    padding: 0 10px;
+    word-break: break-word;
+    z-index: 1; 
+    opacity: 0; 
+    transition: opacity 0.5s ease-out;
+}
+
+h2 { font-size: 24px; margin-bottom: 5px; }
+#current-player-name {
+    font-size: 36px;
+    font-weight: bold;
+    color: #ffeb3b;
+    display: block;
+    margin-top: 5px;
+    text-align: center;
+}
+
+.hidden { display: none !important; }
+
+#pass-screen {
+    text-align: center;
+    padding: 30px;
+}
+
+#game-over-message {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffeb3b;
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* ==================== CSS الأزرار موحد ==================== */
+button, #next-player-button, #pass-button {
+    display: block;
+    margin: 15px auto;       /* يوسّط كل زر */
+    padding: 15px 30px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background-color: #249F2D; /* اللون الموحد لكل الأزرار */
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    transition: 0.3s;
+}
+
+button:hover, #next-player-button:hover, #pass-button:hover {
+    background-color: #305F7A; /* لون عند التمرير */
+}
+</style>
+</head>
+<body>
+
+<div class="game-area">
+
+    <div id="scratch-stage">
+        <h2>يا تراا التحفيل هيكون على مين يا 
+        <span id="current-player-name">...</span></h2>
+        <div class="circle-container">
+            <span id="secret-word">الكلمة السرية</span> 
+            <canvas id="scratch-canvas" width="250" height="250"></canvas>
+        </div>
+        <button id="next-player-button">اللي بعدوووو</button> 
+    </div>
+
+    <div id="pass-screen" class="hidden">
+        
+        <p style="font-size: 1.1em;">خلاص خربشت يناصح 😂
+        <br/>
+        ادي الفون للي بعدك بقى</p>
+        <p style="font-weight: bold;">(السرية التامة😉)</p>
+        <button id="pass-button">مستعد للكشف!</button>
+    </div>
+
+    <div id="game-over-message" class="hidden">
+        يلا بقى شوفوا هتوقعوا الامبوستر اذاي وهتعرفوا تكشفوه او لا 😂❤️
+        <br />
+        <button onclick="goToPage()">
+         ⚡نخش على الجد⚡
+        </button>
+    </div>
+
+</div>
+
+<script>
+// ==================== تسجيل Service Worker ====================
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+    .then(reg => console.log('Service Worker Registered'))
+    .catch(err => console.log('Service Worker Failed:', err));
+}
+
+// ==================== بيانات اللعبة ====================    
+const food = ["كشري","ملوخية","محشي","كباب","كفتة","شاورما","فطير","طعمية","فول","عدس","بيتزا","ساندوتش","برجر","مكرونة"];
+const jobs = ["نجار","حداد","سباك","كهربائي","ترزي","طباخ","حلاق","دكتور","ممرض","صيدلي"];
+const anime = ["لوفي","زورو","سانجي","نامي","روبن","إيتاشي","ساسكي"];
+const girls = ["مكياج","روج","ماسكرا","شنطة","سلسلة","حلق"];
+
+function getSharedSecretWord() {
+    const allSecretWords = { food, jobs, anime, girls };
+    const keys = Object.keys(allSecretWords);
+    const randomKey = keys[Math.floor(Math.random() * keys.length)];
+    const list = allSecretWords[randomKey];
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+// ==================== متغيرات اللعبة ====================    
+let players = JSON.parse(localStorage.getItem('players') || '[]');    
+let currentTurnOrder = []; 
+const SCRATCH_RADIUS = 35;    
+let sharedSecretWord;    
+let assignedRoles = []; // قائمة الأدوار للاعبين 
+let scratchFinished = false;    
+let scratching = false;    
+let scratchedSet = new Set(); 
+let _currentPlayerNameForMark = '';
+
+// ==================== عناصر HTML ====================    
+const scratchStage = document.getElementById('scratch-stage');    
+const passScreen = document.getElementById('pass-screen');    
+const canvas = document.getElementById('scratch-canvas');    
+const ctx = canvas.getContext('2d');    
+const currentPlayerSpan = document.getElementById('current-player-name');    
+const secretWordSpan = document.getElementById('secret-word');    
+const nextPlayerButton = document.getElementById('next-player-button');    
+const passButton = document.getElementById('pass-button');    
+const gameOverMessage = document.getElementById('game-over-message');    
+
+// ==================== إعداد وتوزيع الأدوار (تم التعديل هنا) ====================    
+function setupNewGame() {    
+    if(players.length < 3) {
+        // إذا لم يتم إضافة لاعبين، استخدم قائمة افتراضية (للتجربة)
+        players = ["ياسين","علي","محمود","مريم"]; 
+    } else {
+        players = Array.from(new Set(players));
+    }
+    
+    // **1. تحديد عدد الأدوار:**
+    scratchedSet = new Set();
+    sharedSecretWord = getSharedSecretWord();
+    currentTurnOrder = [...players].sort(() => Math.random() - 0.5); 
+    
+    let impostersCount = 0;    
+    const rand = Math.random();    
+    if(rand < 0.03) impostersCount = players.length;
+    else if(rand < 0.08) impostersCount = 4;
+    else if(rand < 0.18) impostersCount = 3;
+    else if(rand < 0.60) impostersCount = 2;
+    else if(rand < 0.90) impostersCount = 1;
+    else impostersCount = 0;
+    
+    // لضمان عدم تجاوز عدد الأمبوستر نصف اللاعبين
+    const maxAllowedImposters = Math.floor(players.length / 2);
+    if(impostersCount > maxAllowedImposters) impostersCount = maxAllowedImposters;
+    if(impostersCount === 0 && players.length >= 3) impostersCount = 1; // ضمان وجود أمبوستر واحد على الأقل في الغالب
+
+    // **2. توزيع الأدوار وتحديد الأمبوستر:**
+    assignedRoles = players.map(name => ({name, role: sharedSecretWord}));    
+    let shuffledNames = [...players].sort(() => Math.random() - 0.5);    
+    let actualImposters = [];
+    
+    for(let i=0; i < impostersCount && i < shuffledNames.length; i++){    
+        assignedRoles.find(p => p.name === shuffledNames[i]).role = "الامبوستر 🫵🏻 😈";    
+        actualImposters.push(shuffledNames[i]);
+    }    
+    
+    // **3. التخزين النهائي لقائمة الأمبوستر (مهم للصفحات التالية)**
+    localStorage.setItem("imposters", JSON.stringify(actualImposters));
+    
+    // **4. تصفير مؤشرات التصويت لبدء الجولة الجديدة:**
+    localStorage.setItem("voteIndex", "0"); 
+    localStorage.setItem("suspectIndex", "0"); 
+    localStorage.setItem("votes", "[]"); 
+    localStorage.setItem("allVotes", "[]"); 
+}    
+
+// ==================== وظائف الخربشة (كما هي) ====================    
+function resetCanvas(){    
+    scratchFinished = false;    
+    secretWordSpan.style.opacity = 0;    
+    canvas.style.opacity = 1;    
+    
+    ctx.globalCompositeOperation = "source-over";    
+    ctx.clearRect(0,0,canvas.width,canvas.height);    
+    ctx.fillStyle = "#CFCFCF";    
+    ctx.beginPath();    
+    ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2 - 5, 0, Math.PI*2);    
+    ctx.fill();    
+}    
+    
+function initializeTurn(){    
+    scratchStage.classList.remove('hidden');    
+    passScreen.classList.add('hidden');    
+    gameOverMessage.classList.add('hidden');    
+    nextPlayerButton.classList.add('hidden');    
+    
+    const currentPlayerName = currentTurnOrder.find(name => !scratchedSet.has(name));
+    
+    if(!currentPlayerName){    
+        // انتهى عرض الأدوار على كل اللاعبين
+        scratchStage.classList.add('hidden');    
+        passScreen.classList.add('hidden');    
+        gameOverMessage.classList.remove('hidden');    
+        return;    
+    }    
+    
+    _currentPlayerNameForMark = currentPlayerName; 
+    const currentPlayerRole = assignedRoles.find(p => p.name === currentPlayerName).role;    
+    currentPlayerSpan.textContent = currentPlayerName; 
+    secretWordSpan.textContent = currentPlayerRole;    
+    secretWordSpan.style.color = currentPlayerRole.includes("الامبوستر") ? '#FF5252' : '#000';    
+    resetCanvas();    
+}    
+    
+function draw(e){    
+    // ... (منطق الخربشة كما هو) ...
+    if(!scratching || scratchFinished) return;    
+    const rect = canvas.getBoundingClientRect();    
+    const clientX = e.clientX || (e.touches && e.touches[0] && e.touches[0].clientX);    
+    const clientY = e.clientY || (e.touches && e.touches[0] && e.touches[0].clientY);    
+    if(clientX == null || clientY == null) return;
+    const x = clientX - rect.left;    
+    const y = clientY - rect.top;    
+    
+    ctx.globalCompositeOperation = "destination-out";    
+    ctx.beginPath();    
+    ctx.arc(x, y, SCRATCH_RADIUS, 0, Math.PI*2);    
+    ctx.fill();    
+    
+    let data = ctx.getImageData(0,0,canvas.width,canvas.height).data;    
+    let cleared = 0;    
+    for(let i=3;i<data.length;i+=4) if(data[i]<50) cleared++;    
+    if(cleared/(data.length/4) > 0.65){    
+        scratchFinished = true;    
+        canvas.style.opacity = 0;    
+        secretWordSpan.style.opacity = 1;    
+        nextPlayerButton.classList.remove('hidden');    
+    }    
+}    
+
+canvas.addEventListener("mousedown",()=>scratching=true);    
+canvas.addEventListener("mouseup",()=>scratching=false);    
+canvas.addEventListener("mouseleave",()=>scratching=false);    
+canvas.addEventListener("mousemove",draw);    
+canvas.addEventListener("touchstart",e=>{e.preventDefault(); scratching=true; draw(e);});    
+canvas.addEventListener("touchend",()=>scratching=false);    
+canvas.addEventListener("touchcancel",()=>scratching=false);    
+canvas.addEventListener("touchmove",e=>{e.preventDefault(); draw(e);});    
+    
+nextPlayerButton.addEventListener('click',()=>{    
+    if(_currentPlayerNameForMark) scratchedSet.add(_currentPlayerNameForMark);
+    scratchStage.classList.add('hidden');    
+    passScreen.classList.remove('hidden');    
+});    
+    
+passButton.addEventListener('click',()=>{    
+    initializeTurn();    
+});    
+
+// دالة الانتقال (تم التعديل هنا)
+function goToPage() {
+    // الانتقال إلى صفحة تصويت الأعداد (page5.html)
+    window.location.href = "page5.html";
+}
+
+// ==================== بدء اللعبة ====================    
+setupNewGame();
+initializeTurn();
+</script>
+</body>    
+</html>

@@ -1,0 +1,182 @@
+
+
+/* تصفير الهوامش وتعديل box-sizing */
+* {
+  margin: 0;
+  padding: 0; 
+  box-sizing: border-box;
+}
+
+/* إعدادات الجسم والخلفية */
+body {
+  min-height: 100vh;
+  font-family: "Tajawal", sans-serif;
+  background: linear-gradient(135deg, #59379A, #407CA0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* عنوان اللاعبين */
+.fontt {
+  font-size: 40px;
+  text-align: center;
+  color: #fff;
+  margin-top: 10px;
+}
+
+/* الحاوية الرئيسية */
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* قائمة اللاعبين */
+.players-container {
+  width: 90%;
+  max-width: 400px;
+  margin-top: 20px;
+  direction: rtl; /* دعم اللغة العربية */
+}
+
+/* تصميم الكروت */
+.player-card, .new-player-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  background-color: var(--card-color, #197630);
+  transition: transform 0.2s;
+}
+
+.player-card:hover, .new-player-card:hover {
+  transform: scale(1.05);
+}
+
+/* صورة اللاعب */
+.player-card .avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-inline-end: 15px;
+  overflow: hidden;
+}
+
+.player-card .avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* كارت الإضافة */
+.new-player-card {
+  background-color: transparent;
+  border: 3px dashed rgba(255, 255, 255, 0.4);
+  box-shadow: none;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* الأزرار */
+button {
+  cursor: pointer;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+/* زر الحذف */
+.delete-button {
+  background: #0058FF;
+  color: white;
+  font-weight: bold;
+}
+
+/* زر الإضافة */
+.add-button {
+  background: green;
+  color: white;
+  font-weight: bold;
+}
+
+/* زر البداية */
+.start-button {
+  margin-top: 20px;
+  background: #A95CCF;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  font-size: 20px;
+  border-radius: 12px;
+  font-weight: bold;
+}
+
+/* responsive */
+@media (max-width: 480px) {
+  .fontt {
+    font-size: 28px;
+  }
+
+  .player-card, .new-player-card {
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  .start-button {
+    font-size: 18px;
+  }
+}
+
+
+
+/* إخفاء الخلفية وتوسيط الـ Modal */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* خلفية داكنة وشفافة */
+    display: none; /* يتم إخفاؤها افتراضياً */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* للتأكد من أنها تظهر فوق كل العناصر */
+}
+
+/* تصميم محتوى الـ Modal (الصندوق الأبيض) */
+.modal-content {
+    background-color: #ffffff; /* الخلفية البيضاء أو أي لون آخر */
+    color: #333333; /* لون النص الداخلي */
+    padding: 25px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    text-align: right; /* محاذاة النص لليمين */
+}
+
+/* تصميم حقل الإدخال والأزرار */
+#new-player-input {
+    width: 95%;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.modal-actions button {
+    padding: 8px 15px;
+    margin-inline-start: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}

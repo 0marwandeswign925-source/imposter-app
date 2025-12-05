@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مرحلة التصويت</title>
+<style>
+body { font-family:'Arial',sans-serif; background:linear-gradient(135deg,#1f083d,#6a1a8e,#1f083d); color:#fff; text-align:center; direction:rtl; min-height:100vh;}
+.header-bar { width:100%; padding:20px 0; background:rgba(0,0,0,0.2);}
+.main-title { font-size:28px; font-weight:bold;}
+.content-container { width:90%; max-width:450px; padding:20px; margin:20px auto;}
+#current-voter-name { font-weight:bold; color:#ffeb3b; font-size:26px; display:block; margin-bottom:5px;}
+.player-btn { display:block; width:100%; padding:18px; margin:15px 0; font-size:22px; border-radius:12px; background:#3a225e; color:#fff; cursor:pointer;}
+.player-btn.selected { background:#e74c3c; }
+.reset-button { background:#4CAF50; }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div class="main-title">مرحلة التصويت</div>
+</div>
+
+<div class="content-container">
+    <div id="instruction-text">
+        <span id="current-voter-name">---</span> اختار الشخص اللي شاكك فيه
+    </div>
+
+    <span id="info">---</span>
+
+    <div id="buttons"></div>
+</div>
+
+<script>
+// ======== تحميل البيانات ========
+let players = JSON.parse(localStorage.getItem("players") || "[]");
+let votes = JSON.parse(localStorage.getItem("votes") || "[]"); 
+let allVotes = JSON.parse(localStorage.getItem("allVotes") || "[]"); 
+let suspectIndex = parseInt(localStorage.getItem("suspectIndex") || "0");
+
+const currentVoterNameSpan = document.getElementById("current-voter-name");
+const infoText = document.getElementById("info");
+const instructionTextDiv = document.getElementById("instruction-text");
+const buttonsContainer = document.getElementById("buttons");
+
+// ======== التحقق من وجود لاعبين ========
+if(players.length === 0){
+    buttonsContainer.innerHTML = `<button class="reset-button" onclick="window.location.href='setup.html'">لا يوجد لاعبين، اضغط للعودة</button>`;
+    infoText.textContent = "يجب إضافة لاعبين قبل بدء التصويت!";
+    instructionTextDiv.innerHTML = "";
+    throw new Error("لا يوجد لاعبين");
+}
+
+// ======== دالة الحفظ والانتقال ========
+function saveAndAdvance(selectedSuspects) {
+    const currentPlayer = players[suspectIndex];
+
+    allVotes.push({
+        voter: currentPlayer,
+        suspects: selectedSuspects
+    });
+    localStorage.setItem("allVotes", JSON.stringify(allVotes));
+
+    suspectIndex++;
+    localStorage.setItem("suspectIndex", suspectIndex);
+    
+    if(suspectIndex >= players.length){
+        infoText.textContent = "تم الانتهاء من التصويت. جارٍ الانتقال للنتائج...";
+        setTimeout(()=> window.location.href="results.html",1000);
+    } else {
+        infoText.textContent = `تم تسجيل تصويت ${currentPlayer}. جارٍ الانتقال...`;
+        setTimeout(()=> window.location.reload(),800);
+    }
+}
+
+// ======== التحقق من نهاية التصويت ========
+if(suspectIndex >= players.length){
+    window.location.href="results.html";
+    throw new Error("انتهى التصويت");
+}
+
+// ======== اللاعب الحالي ========
+let currentPlayer = players[suspectIndex];
+currentVoterNameSpan.textContent = currentPlayer;
+
+let voteData = votes.find(v=>v.player===currentPlayer);
+if(!voteData || voteData.count==null){
+    instructionTextDiv.innerHTML = "⚠️ خطأ في البيانات!";
+    infoText.textContent = "يجب العودة لتصويت الأعداد لإكمال الدور.";
+    buttonsContainer.innerHTML = `<button class="player-btn reset-button" onclick="window.location.href='setup.html'">العودة لتسجيل اللاعبين</button>`;
+    throw new Error("خطأ في البيانات");
+}
+
+let maxSelect = voteData.count;
+let selected = [];
+
+if(maxSelect===1){
+    instructionTextDiv.innerHTML = `<span id="current-voter-name">${currentPlayer}</span> اختار الشخص اللي شاكك فيه`;
+} else if(maxSelect>1){
+    instructionTextDiv.innerHTML = `<span id="current-voter-name">${currentPlayer}</span> اختار ${maxSelect} أشخاص شاكك فيهم`;
+}
+
+infoText.textContent = `عليك اختيار ${maxSelect} (تم اختيار ${selected.length})`;
+
+// ======== حالة عدم الشك ========
+if(maxSelect===0){
+    instructionTextDiv.innerHTML = `<span id="current-voter-name">${currentPlayer}</span> مش شاكك في حد`;
+   
+    setTimeout(()=>saveAndAdvance([]),800);
+}
+
+// ======== إنشاء أزرار اللاعبين ========
+players.forEach(p=>{
+    if(p===currentPlayer) return;
+    let btn=document.createElement("button");
+    btn.className="player-btn";
+    btn.textContent=p;
+    btn.onclick=function(){
+        if(selected.includes(p)){
+            selected=selected.filter(x=>x!==p);
+            btn.classList.remove("selected");
+        } else {
+            if(selected.length<maxSelect){
+                selected.push(p);
+                btn.classList.add("selected");
+            } else {
+                alert(`لا يمكنك اختيار أكثر من ${maxSelect} أشخاص.`);
+            }
+        }
+        infoText.textContent=`عليك اختيار ${maxSelect} (تم اختيار ${selected.length})`;
+        if(selected.length===maxSelect){
+            infoText.textContent=`تم اكتمال العدد المطلوب. جارٍ التسجيل والانتقال...`;
+            setTimeout(()=>saveAndAdvance(selected),500);
+        }
+    }
+    buttonsContainer.appendChild(btn);
+});
+</script>
+
+</body>
+</html>

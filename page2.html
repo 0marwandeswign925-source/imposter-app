@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل اللاعبين</title>
+<style>
+/* =================================
+   الأنماط العامة والخلفية
+   ================================= */
+body {
+    background: linear-gradient(135deg, #1f083d, #6a1a8e, #1f083d);
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    color: #fff;
+    padding: 0;
+    margin: 0;
+    min-height: 100vh;
+    direction: rtl;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between; /* لتحريك زر البداية للأسفل */
+}
+
+.header-bar {
+    width: 100%;
+    padding: 25px 0 15px;
+    background: rgba(0, 0, 0, 0.1); 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.main-title {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffeb3b;
+}
+
+/* حاوية قائمة اللاعبين */
+.player-list-container {
+    width: 90%;
+    max-width: 400px;
+    flex-grow: 1; /* للسماح لها بالتمدد */
+    padding: 20px 0;
+}
+
+.player-list {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 10px;
+    min-height: 200px; /* لضمان وجود مساحة */
+}
+
+.player-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border-radius: 12px;
+    background: var(--card-color, #E91E63);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.delete-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* زر إضافة جديد لفتح الـ Modal */
+.add-new-button {
+    width: 90%;
+    max-width: 400px;
+    padding: 15px;
+    margin-top: 20px;
+    font-size: 20px;
+    font-weight: bold;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+
+/* زر البداية (في الأسفل) */
+#start-button {
+    width: 90%;
+    max-width: 400px;
+    padding: 18px;
+    font-size: 22px;
+    font-weight: bold;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-bottom: 20px; /* للتحكم في موقعه في الأسفل */
+}
+
+#start-button:disabled {
+    background: #777;
+    cursor: not-allowed;
+}
+
+/* =================================
+   أنماط النافذة المنبثقة (Modal)
+   ================================= */
+.modal-backdrop {
+    display: none; /* يتم التحكم بها بواسطة JS */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background: #3a225e;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+#new-player-input {
+    width: 90%;
+    padding: 12px;
+    margin: 15px 0;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: right;
+    outline: none;
+}
+
+.modal-actions button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.ok-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.cancel-btn {
+    background: #777;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header-bar">
+    <div class="main-title">
+       المطروشين اللي هيلعبو🤙🏻
+        
+        
+        </div>
+</div>
+
+<div class="player-list-container">
+    <div class="player-list" id="player-list">
+        </div>
+    <button class="add-new-button" id="open-modal-button">
+        هضيف واحد كمان 🤨
+    </button>
+</div>
+
+
+<button id="start-button" onclick="startVoting()" disabled>لازم يكون في ٤ بيلعبوا على الاقل</button>
+
+
+<div id="add-player-modal" class="modal-backdrop">
+    <div class="modal-content">
+        <p>أدخل اسم اللاعب الجديد:</p>
+        <input type="text" id="new-player-input" placeholder="اسم اللاعب">
+        <div class="modal-actions">
+            <button type="button" id="modal-cancel" class="cancel-btn">إلغاء</button>
+            <button type="button" id="modal-ok" class="ok-btn">موافق</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const cardColors = ['#E91E63', '#9C27B0', '#2196F3', '#00BCD4', '#4CAF50', '#FF9800', '#F44336', '#673AB7'];
+const MIN_PLAYERS = 4; // تم التعديل ليصبح 4 لاعبين كحد أدنى
+
+// ======== عناصر DOM ========
+let players = JSON.parse(localStorage.getItem("players") || "[]");
+
+const listDiv = document.getElementById("player-list");
+const startButton = document.getElementById("start-button");
+
+const modal = document.getElementById("add-player-modal");
+const openModalButton = document.getElementById("open-modal-button");
+const newPlayerInput = document.getElementById("new-player-input");
+const modalOkBtn = document.getElementById("modal-ok");
+const modalCancelBtn = document.getElementById("modal-cancel");
+
+// ======== وظائف التحكم في الـ Modal ========
+function openModal() {
+    modal.style.display = 'flex';
+    newPlayerInput.focus();
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+    newPlayerInput.value = '';
+}
+
+// ======== دالة تحديث عرض القائمة ========
+function updateList() {
+    listDiv.innerHTML = ''; 
+
+    players.forEach((p, index) => {
+        const playerCard = document.createElement("div");
+        playerCard.className = "player-card";
+        playerCard.style.setProperty('--card-color', cardColors[index % cardColors.length]);
+
+        playerCard.innerHTML = `
+            <span>${p}</span>
+            <button type="button" class="delete-button" data-name="${p}">&times;</button>
+        `;
+
+        playerCard.querySelector('.delete-button').addEventListener('click', deletePlayer);
+        listDiv.appendChild(playerCard);
+    });
+
+    updateStartButtonState();
+}
+
+// ======== دالة تحديث حالة زر البداية ========
+function updateStartButtonState() {
+    if (players.length >= MIN_PLAYERS) {
+        startButton.disabled = false;
+        startButton.textContent = `يلا بيناا يقلبي🥸 (eng.maro🫶🏻)`;
+    } else {
+        startButton.disabled = true;
+        startButton.textContent = `لازم يكون في ${MIN_PLAYERS} بيلعبوا على الاقل`;
+    }
+}
+
+// ======== دالة لإضافة لاعب جديد (من الـ Modal) ========
+function addPlayerFromModal() {
+    const name = newPlayerInput.value.trim();
+    if (name.length < 2) {
+        alert("اكتب اسم لاعب صحيح!");
+        return;
+    }
+    if (players.includes(name)) {
+        alert("يسط الاسم ده موجود 🤦🏻.");
+        return;
+    }
+    
+    players.push(name);
+    localStorage.setItem("players", JSON.stringify(players));
+    closeModal();
+    updateList();
+}
+
+// ======== دالة لحذف لاعب ========
+function deletePlayer(event) {
+    const nameToDelete = event.currentTarget.dataset.name;
+    players = players.filter(p => p !== nameToDelete);
+    localStorage.setItem("players", JSON.stringify(players));
+    updateList();
+}
+
+// ======== دالة بدء التصويت (الانتقال للصفحة التالية) ========
+function startVoting() {
+    if(players.length < MIN_PLAYERS) {
+        alert(`لا يمكن بدء التصويت. يجب إضافة ${MIN_PLAYERS} لاعبين على الأقل!`);
+        return; // يجب أن لا يصل إلى هنا لأن الزر يكون معطلاً، لكن للتأكيد
+    }
+    
+    // منطق توزيع الأدوار وتهيئة اللعبة
+    const numberOfImposters = Math.ceil(players.length / 4);
+    let shuffledPlayers = [...players].sort(() => 0.5 - Math.random());
+    let imposters = shuffledPlayers.slice(0, numberOfImposters); 
+    
+    localStorage.setItem("imposters", JSON.stringify(imposters));
+    
+    // تهيئة مؤشرات التصويت
+    localStorage.setItem("votes", JSON.stringify([])); 
+    localStorage.setItem("allVotes", JSON.stringify([])); 
+    localStorage.setItem("voteIndex", 0); 
+
+    // الانتقال إلى صفحة تصويت الأعداد
+    window.location.href = "page4.html"; 
+}
+
+// ======== مستمعات الأحداث ========
+openModalButton.addEventListener('click', openModal);
+modalCancelBtn.addEventListener('click', closeModal);
+modalOkBtn.addEventListener('click', addPlayerFromModal);
+newPlayerInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        addPlayerFromModal();
+    }
+});
+
+// تشغيل الدالة عند تحميل الصفحة
+updateList();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+/*style.css*/
+
+/* تصفير الهوامش وتهيئة الـ box-sizing */
+* {
+    margin: 0;
+    padding: 0; 
+    box-sizing: border-box;
+}
+
+/* إعدادات الجسم والخلفية */
+body{
+    height: 100%;
+     background: linear-gradient(135deg, #59379A, 
+     #407CA0)
+}
+
+/* الحاوية اللي هتوسط كل حاجة */
+.container {
+    display: flex;
+    flex-direction: column; /* ترتيب عمودي */
+    justify-content: center; /* توسيط عمودي */
+    align-items: center;     /* توسيط أفقي */
+    height: 100vh;           /* ارتفاع الصفحة كامل */
+    gap: 20px;               /* مسافة بين اللوجو والزرار */
+}
+footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* اللوجو */
+.logo {
+    width: 320px; /* حجم اللوجو */
+    height: auto;
+    display: block; /* يضمن أنه يظهر كعنصر بلوك */
+}
+
+/* الزرار */
+.btn {
+    display: block; /* يضمن أنه يظهر تحت اللوجو */
+    padding: 12px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background-color: #6c63ff;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
+    text-align: center;
+}
+
+.btn:hover {
+    background-color: #5751d9; /* تأثير hover */
+}

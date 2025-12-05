@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+    الڤوت
+</title>
+<link rel="stylesheet" href="style.css"> 
+<link rel="manifest" href="manifest.json">
+<style>
+/* يجب أن يكون الخط متاحًا أو استبدله بخط يدعم العربية */
+body {
+    font-family: 'Arial', sans-serif; 
+    background: linear-gradient(135deg, #59379A, #407CA0);
+    color: #fff;
+    text-align: center;
+    padding: 30px;
+    direction: rtl; 
+    min-height: 100vh; /* لضمان تغطية الخلفية كامل الشاشة */
+}
+
+#current-player {
+    font-size: 32px;
+    font-weight: bold;
+    color: #ffeb3b;
+    margin-bottom: 25px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+h2 {
+    font-size: 24px;
+    margin-bottom: 30px;
+}
+
+button {
+    display: block;
+    width: 80%;
+    max-width: 400px;
+    margin: 15px auto;
+    padding: 18px;
+    font-size: 22px;
+    border: none;
+    border-radius: 12px;
+    background: #222;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+button:hover {
+    background: #444;
+}
+button:active {
+    transform: scale(0.98);
+}
+
+/* نمط لرسائل الخطأ والتحقق */
+.message-box {
+    color: #ff5252;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+/* نمط لزر العودة في حالة الخطأ */
+.reset-button {
+    background: #ff5252;
+}
+.reset-button:hover {
+    background: #e04040;
+}
+</style>
+</head>
+<body>
+
+<h2>
+    كل واحد بيختار عدد الاأشخاص اللي شاكك فيهم
+</h2>
+<div id="current-player">---</div>
+
+<h3>يلا يحب ف كام واحد؟</h3>
+
+<div id="buttons"></div>
+<div id="message-display" class="message-box"></div>
+
+<script>
+// تحديد العناصر الأساسية
+const currentPlayerDiv = document.getElementById("current-player");
+const buttonsContainer = document.getElementById("buttons");
+const messageDisplayDiv = document.getElementById("message-display");
+
+// ======== تحميل البيانات الأساسية ========
+let players = JSON.parse(localStorage.getItem("players") || "[]");
+// يجب أن يكون المؤشر رقمًا، وإلا نبدأ من 0
+let currentIndex = parseInt(localStorage.getItem("voteIndex") || "0"); 
+let votes = JSON.parse(localStorage.getItem("votes") || "[]"); 
+
+// ======== 1. التحقق من حالة الإعداد ========
+function setupCheck() {
+    // التأكد من وجود قائمة اللاعبين والأدوار
+    if (players.length === 0 || !localStorage.getItem("imposters")) {
+        currentPlayerDiv.textContent = "خطأ في بيانات اللعبة!";
+        messageDisplayDiv.innerHTML = "يجب العودة لصفحة توزيع الأدوار (page4) أولاً لتجهيز اللاعبين.";
+        buttonsContainer.innerHTML = `<button class="reset-button" onclick="window.location.href='page4.html'">العودة لتوزيع الأدوار</button>`;
+        return false;
+    }
+    return true;
+}
+
+// ======== 2. التحقق من انتهاء التصويت ========
+function checkCompletion() {
+    if (currentIndex >= players.length) {
+        // عند الانتهاء من تصويت الأعداد، نهيئ مؤشر تصويت الأسماء وننتقل.
+        localStorage.setItem("suspectIndex", 0); 
+        // مسار الانتقال بعد انتهاء تصويت الأعداد
+        window.location.href = "suspect_players.html"; 
+        return true;
+    }
+    return false;
+}
+
+// ======== 3. تنفيذ دور التصويت الحالي ========
+function startVotingRound() {
+    if (!setupCheck() || checkCompletion()) {
+        return; // توقف إذا كان هناك خطأ أو إذا انتهت الجولة
+    }
+
+    const currentPlayer = players[currentIndex];
+    currentPlayerDiv.textContent = `دور: ${currentPlayer}`;
+    messageDisplayDiv.textContent = `امبوصطرررر`;
+
+    // أقصى عدد ممكن الشك فيه = عدد اللاعبين - 1 (اللاعب لا يشك في نفسه)
+    const maxSuspicionCount = players.length - 1;
+
+    // إنشاء أزرار الأعداد (من 0 حتى max)
+    for(let i = 0; i <= maxSuspicionCount; i++) {
+        let btn = document.createElement("button");
+        btn.textContent = `شاكك في ${i} من الناس`;
+        btn.dataset.count = i;
+
+        btn.onclick = function() {
+            const count = parseInt(this.dataset.count);
+            
+            // 1. إزالة التصويت القديم لنفس اللاعب (لضمان تصويت واحد فقط)
+            votes = votes.filter(v => v.player !== currentPlayer);
+            
+            // 2. تسجيل التصويت الجديد
+            votes.push({ player: currentPlayer, count: count });
+            localStorage.setItem("votes", JSON.stringify(votes));
+
+            // 3. زيادة المؤشر والانتقال للاعب التالي
+            localStorage.setItem("voteIndex", currentIndex + 1);
+
+            // 4. إعادة تحميل الصفحة للبدء دور اللاعب التالي
+            window.location.reload(); 
+        };
+
+        buttonsContainer.appendChild(btn);
+    }
+}
+
+// بدء تنفيذ البرنامج
+startVotingRound();
+
+// تسجيل service worker (لأغراض PWA)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+</script>
+
+</body>
+</html>
