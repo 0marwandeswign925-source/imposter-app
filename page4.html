@@ -193,10 +193,10 @@ function setupNewGame() {
 
     if(totalPlayers >= 3){
         const rand = Math.random();
-        if(rand < 0.30) impostersCount = totalPlayers;       // احتمال 30% كلهم أمبوستر
-        else if(rand < 0.30) impostersCount = Math.min(4, totalPlayers); // احتمال 20% 4 أمبوستر
-        else if(rand < 0.60) impostersCount = Math.min(3, totalPlayers); // احتمال 30% 3 أمبوستر
-        else if(rand < 0.90) impostersCount = Math.min(2, totalPlayers); // احتمال 30% 2 أمبوستر
+        if(rand < 0.10) impostersCount = totalPlayers;       // احتمال 10% كلهم أمبوستر
+        else if(rand < 0.20) impostersCount = Math.min(4, totalPlayers); // احتمال 20% 4 أمبوستر
+        else if(rand < 0.10) impostersCount = Math.min(3, totalPlayers); // احتمال 30% 3 أمبوستر
+        else if(rand < 0.50) impostersCount = Math.min(2, totalPlayers); // احتمال 30% 2 أمبوستر
         else impostersCount = 1;                               // احتمال 10% أمبوستر واحد
     } else {
         impostersCount = 1;
