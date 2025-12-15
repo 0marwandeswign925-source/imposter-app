@@ -37,40 +37,26 @@ let players = JSON.parse(localStorage.getItem("players") || "[]");
 let votes = JSON.parse(localStorage.getItem("votes") || "[]"); 
 let allVotes = JSON.parse(localStorage.getItem("allVotes") || "[]"); 
 let suspectIndex = parseInt(localStorage.getItem("suspectIndex") || "0");
+let imposters = JSON.parse(localStorage.getItem("imposters") || "[]");
 
+// ======== تهيئة النقاط ========
+let scores = JSON.parse(localStorage.getItem("scores") || "{}");
+players.forEach(p=>{
+    if(scores[p]==null) scores[p] = 0;
+});
+localStorage.setItem("scores", JSON.stringify(scores));
+
+// ======== التحقق من وجود لاعبين ========
 const currentVoterNameSpan = document.getElementById("current-voter-name");
 const infoText = document.getElementById("info");
 const instructionTextDiv = document.getElementById("instruction-text");
 const buttonsContainer = document.getElementById("buttons");
 
-// ======== التحقق من وجود لاعبين ========
 if(players.length === 0){
     buttonsContainer.innerHTML = `<button class="reset-button" onclick="window.location.href='setup.html'">لا يوجد لاعبين، اضغط للعودة</button>`;
     infoText.textContent = "يجب إضافة لاعبين قبل بدء التصويت!";
     instructionTextDiv.innerHTML = "";
     throw new Error("لا يوجد لاعبين");
-}
-
-// ======== دالة الحفظ والانتقال ========
-function saveAndAdvance(selectedSuspects) {
-    const currentPlayer = players[suspectIndex];
-
-    allVotes.push({
-        voter: currentPlayer,
-        suspects: selectedSuspects
-    });
-    localStorage.setItem("allVotes", JSON.stringify(allVotes));
-
-    suspectIndex++;
-    localStorage.setItem("suspectIndex", suspectIndex);
-    
-    if(suspectIndex >= players.length){
-        infoText.textContent = "تم الانتهاء من التصويت. جارٍ الانتقال للنتائج...";
-        setTimeout(()=> window.location.href="results.html",1000);
-    } else {
-        infoText.textContent = `تم تسجيل تصويت ${currentPlayer}. جارٍ الانتقال...`;
-        setTimeout(()=> window.location.reload(),800);
-    }
 }
 
 // ======== التحقق من نهاية التصويت ========
@@ -105,8 +91,39 @@ infoText.textContent = `عليك اختيار ${maxSelect} (تم اختيار ${
 // ======== حالة عدم الشك ========
 if(maxSelect===0){
     instructionTextDiv.innerHTML = `<span id="current-voter-name">${currentPlayer}</span> مش شاكك في حد`;
-   
     setTimeout(()=>saveAndAdvance([]),800);
+}
+
+// ======== دالة الحفظ والانتقال مع حساب النقاط ========
+function saveAndAdvance(selectedSuspects) {
+    const currentPlayer = players[suspectIndex];
+
+    // ======== حساب النقاط ========
+    let points = 0;
+    selectedSuspects.forEach(s=>{
+        if(imposters.includes(s)) points += 1; // كل اختيار صحيح +1 نقطة
+    });
+    scores[currentPlayer] += points;
+    localStorage.setItem("scores", JSON.stringify(scores));
+
+    // ======== حفظ التصويت ========
+    allVotes.push({
+        voter: currentPlayer,
+        suspects: selectedSuspects,
+        points: points
+    });
+    localStorage.setItem("allVotes", JSON.stringify(allVotes));
+
+    suspectIndex++;
+    localStorage.setItem("suspectIndex", suspectIndex);
+    
+    if(suspectIndex >= players.length){
+        infoText.textContent = "تم الانتهاء من التصويت. جارٍ الانتقال للنتائج...";
+        setTimeout(()=> window.location.href="results.html",1000);
+    } else {
+        infoText.textContent = `تم تسجيل تصويت ${currentPlayer} (+${points} نقطة). جارٍ الانتقال...`;
+        setTimeout(()=> window.location.reload(),800);
+    }
 }
 
 // ======== إنشاء أزرار اللاعبين ========

@@ -3,62 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نتائج التصويت بالنقاط</title>
+<title>نتائج التصويت</title>
 <style>
-body { font-family: Arial; text-align: center; background: linear-gradient(135deg,#1f083d,#6a1a8e); color:#fff; min-height:100vh; padding:20px; }
+body {
+    font-family: Arial;
+    text-align: center;
+    background: linear-gradient(135deg,#1f083d,#6a1a8e);
+    color:#fff;
+    min-height:100vh;
+    padding:20px;
+    direction: rtl;
+}
+
 h2 { margin-bottom: 20px; }
-.result { background: rgba(0,0,0,0.3); margin: 10px 0; padding: 15px; border-radius: 12px; font-size: 20px; }
+
+.result {
+    background: rgba(0,0,0,0.35);
+    margin: 10px auto;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 20px;
+    max-width: 400px;
+}
+
 .result b { color: #ffeb3b; }
-button { padding:10px 20px; font-size:18px; margin-top:20px; cursor:pointer; border-radius:8px; border:none; background:#4CAF50; color:#fff; }
+
+.imposter {
+    margin-top: 25px;
+    font-size: 24px;
+    color: #ff5252;
+}
+
+button {
+    padding:12px 25px;
+    font-size:18px;
+    margin-top:25px;
+    cursor:pointer;
+    border-radius:10px;
+    border:none;
+    background:#4CAF50;
+    color:#fff;
+    font-weight:bold;
+}
+
 button:hover { background:#45a049; }
 </style>
 </head>
+
 <body>
 
-<h2>نتائج التصويت بالنقاط</h2>
+<h2>🔥 نتائج التصويت 🔥</h2>
 <div id="results"></div>
 
 <button onclick="restart()">إعادة اللعبة</button>
 
 <script>
-let allVotes = JSON.parse(localStorage.getItem('allVotes') || '[]');
-let imposter = localStorage.getItem('imposter');
-const resultsDiv = document.getElementById('results');
+const resultsDiv = document.getElementById("results");
 
-let points = {};
-allVotes.forEach(vote => {
-    const voter = vote.voter;
-    if(!points[voter]) points[voter] = 0;
+// ======== تحميل البيانات ========
+let imposters = JSON.parse(localStorage.getItem("imposters") || "[]");
+let scores = JSON.parse(localStorage.getItem("scores") || "{}");
 
-    vote.suspects.forEach(s => {
-        if(s === imposter){
-            points[voter]++;
-        }
-    });
-});
-
-if(Object.keys(points).length === 0){
-    resultsDiv.innerHTML = '<i>لم يتم تسجيل أي تصويت</i>';
+// ======== عرض النتائج ========
+if(Object.keys(scores).length === 0){
+    resultsDiv.innerHTML = "<i>مفيش نقاط مسجلة 🤷‍♂️</i>";
 } else {
-    Object.entries(points).sort((a,b)=>b[1]-a[1]).forEach(([player, pts])=>{
-        const div = document.createElement('div');
-        div.className = 'result';
-        div.innerHTML = `<b>${player}</b> نقاط: ${pts}`;
-        resultsDiv.appendChild(div);
-    });
-
-    const imposterDiv = document.createElement('div');
-    imposterDiv.style.marginTop = '20px';
-    imposterDiv.style.fontSize = '22px';
-    imposterDiv.style.color = '#e74c3c';
-    imposterDiv.innerHTML = `الإمبوستر الحقيقي هو: <b>${imposter}</b>`;
-    resultsDiv.appendChild(imposterDiv);
+    Object.entries(scores)
+        .sort((a,b)=>b[1]-a[1]) // ترتيب حسب النقاط من الأعلى
+        .forEach(([name,score])=>{
+            const div = document.createElement("div");
+            div.className = "result";
+            div.innerHTML = `<b>${name}</b> — النقاط: ${score}`;
+            resultsDiv.appendChild(div);
+        });
 }
 
+// عرض الإمبوسترات الحقيقيين
+const impDiv = document.createElement("div");
+impDiv.className = "imposter";
+impDiv.innerHTML = `
+👿 الإمبوستر الحقيقي هو:<br>
+<b>${imposters.length ? imposters.join(" ، ") : "غير محدد"}</b>
+`;
+resultsDiv.appendChild(impDiv);
+
+// إعادة اللعبة
 function restart(){
-    if(confirm('هل تريد إعادة اللعبة وحذف كل البيانات؟')){
+    if(confirm("هتمسح كل البيانات وتبدأ من جديد؟")){
         localStorage.clear();
-        window.location.href='setup.html';
+        window.location.href = "index.html";
     }
 }
 </script>

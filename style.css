@@ -10,8 +10,7 @@
 /* إعدادات الجسم والخلفية */
 body{
     height: 100%;
-     background: linear-gradient(135deg, #59379A, 
-     #407CA0)
+     background: linear-gradient(135deg, #59379A,#407CA0)
 }
 
 /* الحاوية اللي هتوسط كل حاجة */
@@ -54,4 +53,8 @@ footer {
 
 .btn:hover {
     background-color: #5751d9; /* تأثير hover */
+}
+.head{
+    align-items: center;
+    font-size: 25px;
 }
