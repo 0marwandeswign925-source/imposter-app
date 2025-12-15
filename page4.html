@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مين الامبوستر 😈</title>
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json" />
+
 <style>
 body { 
     background: linear-gradient(135deg, #59379A, #407CA0); 
@@ -302,6 +304,17 @@ function goToPage() {
 
 setupNewGame();
 initializeTurn();
+// كود لتسجيل الـ Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').then(function(registration) {
+      console.log('ServiceWorker registration successful with scope: ', registration.scope);
+    }, function(err) {
+      console.log('ServiceWorker registration failed: ', err);
+    });
+  });
+}
+
 </script>
 
 </body>
